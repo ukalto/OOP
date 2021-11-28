@@ -1,49 +1,54 @@
-package Model;
-
-import Forest.*;
-import Tree.*;
-import Catastrophe.*;
-
 import java.util.Map;
 
 public class SelectionCuttingModel extends FarmedModel {
 
+    // (Pre): forest != NULL; loss >= 0 && loss <= 1; growth >= 0 && growth <= 1
+    // (Post): sets the values: forest, lossFactor, growthFactor, loss and growth of this factor and
+    //         also sets the max target stock to 350
     public SelectionCuttingModel(Forest forest, double loss, double growth) {
         super(forest, loss, growth);
     }
 
+    // (I): oldestTree >= 0
     private int oldestTree = 0;
+
+    // (Post): calculates and updates the tree population (and age structure) of the forest stored in this instance
+    //      and might also invoke a harvest due to the loss of the corresponding year or the years without harvest
+    //      which has additional impact on the population of the forest. If true the forest gets harvested
+    //      in three different age groups.
+    // (History-C):for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
+    //              provide correct calculations: calcAgeStructure(), calcHealth(), calcTargetStock(),
+    //              calcCo2Stock()
     @Override
     public void calcStock() {
         for (Map.Entry<Integer, Double> entry : forest.getAgeStructure().entrySet()) {
             if(entry.getValue()>0)
                 oldestTree = entry.getKey();
         }
-        // Share of stock for scaling the harvest for the loss
-        // Exception for first year; Therefore the if is needed
+
         if(getForest().getTreePopulation() > 0)
             stock = this.getForest().getTreePopulation();
         if (getLoss() <= 0.3) {
-            if (getLoss() >= 0.1) { // if true there is a small catastrophe
-                // Farm everything in 3 different age groups and not just the old ones (if possible otherwise
-                // just in the groups that are possible)
+            if (getLoss() >= 0.1) {
                 harvestStep();
             }
             if (getLoss() < 0.1) {
                 yearsWithoutHarvest++;
-                if (yearsWithoutHarvest == 11) { //intended harvest
+                if (yearsWithoutHarvest == 11) {
                     farmBetween(oldestTree/10,oldestTree/9,(double)1/2);
                     farmBetween(oldestTree/6,oldestTree/5,(double)1/2);
                     farmBetween((int)(oldestTree/1.2),oldestTree,(double)1/2);
                 }
             }
         }
-        this.getForest().treeGrowth(getGrowth()); // the natural loss-growth factor
+        this.getForest().treeGrowth(getGrowth());
 
-        // add taken wood to loss
         setLoss(getLoss()+((harvestTaken /this.stock)));
     }
 
+    // (Post): Harvests the trees in the age groups oldestTree/10,oldestTree/9; oldestTree/6,oldestTree/5; and
+    //      oldestTree/1.2),oldestTree updating the values harvestTaken and the population of the forest
+    //      and the age structure.
     private void harvestStep(){
         farmBetween(oldestTree/10,oldestTree/9,(double)1/2);
         farmBetween(oldestTree/6,oldestTree/5,(double)1/2);
@@ -54,21 +59,19 @@ public class SelectionCuttingModel extends FarmedModel {
         this.getForest().treeGrowth(getGrowth()); // the natural loss-growth factor
     }
 
+
+    //  (Post): calculates and sets additional influence factors (some by calling other functions)
+    //  (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
+    //               provide correct calculations: calcStock(), calcAgeStructure(), calcHealth(),
+    //               calcTargetStock(), calcCo2Stock()
     @Override
     protected void catastropheHandler(Catastrophe t) {
-        // due to the fact that this is very similar to the classic FarmedModel
-        // many of the catastrophes have the same impact.
-        // only difference is for infestation and storm
         double resist = 0;
         if(t.getCatastropheType() == CatastropheType.Infestation){
-            //Infestation causes the a harvest of 1/2 of all tress in the three groups, since they might die
             harvestStep();
 
-            // add taken wood to loss
             setLoss(getLoss()+((harvestTaken /this.stock)));
 
-            // the co2-stock is impacted by the amount of
-            // harvest
             if (getLoss() >= 0.3) {
                 co2Impact((1 - (getLoss()-(harvestTaken/this.stock))));
             }
@@ -77,17 +80,11 @@ public class SelectionCuttingModel extends FarmedModel {
             }
         }
         else if(t.getCatastropheType() == CatastropheType.Storm){
-            // due to the fact that there is more variance to the heights of the trees the impact is less
-            //
+
             for (Map.Entry<Tree, Double> entry : forest.getSpeciesStructure().entrySet()){
                 resist += entry.getKey().getStormResistance();
             }
             resist /=forest.getSpeciesStructure().size();
-
-            // storms also depend on the date of the last harvest
-            // since there are less trees close to one another after
-            // a harvest the "domino effect" is very unlikely but possible
-            // the impact on the co2-stock is not very high
 
             setLossFactor(getLoss()*(yearsWithoutHarvest/15.0)*t.getDamageFactor()*(1-resist));
             setGrowthFactor(growthFactor);
@@ -96,11 +93,6 @@ public class SelectionCuttingModel extends FarmedModel {
 
             forest.treeGrowth(getGrowth());
 
-            // after a storm there is a chance for an Infestation
-            // because there is laying a lot of dead wood and leaves
-            // around. The shorter the distance to the last
-            // harvest the higher the chance (since there are more
-            // free spaces for dead wood)
             if(Math.random()<0.1+(yearsWithoutHarvest/20.0))
                 catastropheHandler(new InfestationCatastrophe(2.2));
         }
@@ -108,25 +100,36 @@ public class SelectionCuttingModel extends FarmedModel {
             super.catastropheHandler(t);
     }
 
-    public void farmBetween(int lower, int upper, double proportion) { //proportion: the value that gets harvested
+    // BAD: since the methods farmBetween() and calcProportionAge() use the same values for lower
+    //          and upper the values could be stored somewhere or at least be compared. Otherwise
+    //          this could cause wrong calculations - meaning the object coupling isn't perfect here.
+    //          This probably happened due to the fact that the methods were combined at first and
+    //          split up later in the programming process and the object coupling wasn't regarded too much.
+
+    // (Pre): lower >= 0; upper >= lower; proportion >= 0 && proportion <= 1
+    // (Post): updates the the harvestTaken and the tree (age) population/structure harvesting all trees between lower
+    //         and upper; also sets yearsWithoutHarvest to 0
+    public void farmBetween(int lower, int upper, double proportion) {
         yearsWithoutHarvest = 0;
         harvestTaken = 0;
         calcProportionAge(lower, upper);
-        // update all affected values
+
         for (Map.Entry<Integer, Double> i : this.getForest().getAgeStructure().entrySet()) {
             if (i.getKey() >= lower && i.getKey() <=upper) {
-                //calculation: population - population of population of >=n old trees
                 farmOlderThanStep(i, proportion);
             }
         }
     }
 
-    // adjust the share of the trees
+
+    // (Pre): lower >= 0; upper >= lower
+    // (Post): updates the tree (age) population/structure removing every between lower (included) and upper (included)
+    //         from the forest and calculating the new proportions
     public void calcProportionAge(int lower, int upper){
         double sum = 0;
         double value = 0;
         int amountProportion=0;
-        // sum up the lost share and count the amount of entries that need to be adjusted
+
         for (Map.Entry<Integer, Double> entry : getForest().getAgeStructure().entrySet()){
             if(entry.getKey()>=lower && entry.getKey()<=upper){
                 value+=entry.getValue();
@@ -136,10 +139,10 @@ public class SelectionCuttingModel extends FarmedModel {
             }
 
         }
-        //avoid rounding errors
+
         if(value < 0) value = 0;
         if(value > 1) value = 1;
-        // split up the share of to the remaining ages
+
         for (Map.Entry<Integer, Double> entry : getForest().getAgeStructure().entrySet()) {
             if ((entry.getKey() <lower && entry.getValue() != 0)||(entry.getKey() > upper && entry.getValue() != 0)){
                 if(sum>=1)
@@ -155,6 +158,8 @@ public class SelectionCuttingModel extends FarmedModel {
         }
     }
 
+    // (Post): returns a string with the name of the Model
+    //      and the details of the forest stored in this instance
     @Override
     public String toString() {
         return "-- Selection cutting Model: --\n" + getForest();

@@ -1,71 +1,54 @@
-package Forest;
-
-import Tree.Tree;
-
 import java.util.HashMap;
 import java.util.Map;
-
+// GOOD: Minimal object coupling because the calculations are mostly independent of other classes.The thought behind
+//this was that the attribute needed for the calculations should be stored in the same class where they are mostly used.
 public class Forest {
-
-    // area of the forest in ha
+    //(I): area=1
     private final int area = 1;
-
-    // growing trees measured in solid meters (fm) of wood
+    //(I): treePopulation >=0
     private double treePopulation;
-
-    // share of trees (measured in cubic meters of wood) of each tree age
-    // (in whole years) on the entire tree population
-    // Key = age
-    // Value = share
+    //(I): ageStructure != NULL
     private final HashMap<Integer, Double> ageStructure;
-
-    // Indicator for diversity and resistance to diseases,
-    //pests, environmental influences (smaller is better)
-    //(invariant): health> = 0.25 && health <= 1,
+    //(I): 1 >= health >=0
     private double health;
-
-    // expected ideal tree population in fm of wood, depending
-    // of stage of development, tree species, location and care
+    //(I): targetStock >=0
     private double targetStock;
-    // describes the maximum target stock
+    //(I): maxTargetStock >=0
     private double maxTargetStock;
-
-    // total amount of wood removed from the forest in cubic meters
+    //(I): harvest >=0
     private double harvest;
-
-    // Sum of the forest reserves including forest soil (in
-    // Tons of CO2, whereby one ton of CO2 corresponds to one fm of wood)
+    //(I): co2Stock >=0
     private double co2Stock;
-
+    //(I): speciesStructure != NULL
     private final HashMap<Tree, Double> speciesStructure;
-
+    //(I): 1 >= soilQuality >=0
     private double soilQuality;
-
+    //(I): 1 >= stability >=0
     private double stability;
-
+    //(I): 1 >= waterStock >=0
     private double waterStock;
-
+    //(I): hoursOfSunshine >=0
     private double hoursOfSunshine;
 
+    //(I): wolves >=0
     private int wolves;
 
+    //(I): deer >=0
     private int deer;
 
+    //(I): visitors >=0
     private int visitors;
 
+    //(I): forestType != NULL
     private ForestType forestType;
-
+    //(I): history != NULL
     private final HashMap<Integer, Forest> history = new HashMap<>();
 
-    /* Precondition: tree population> = 0
-                     health> = 0.25 && health <= 1
-                     target stock> 0
-                     max target stock> 0 && max target stock> = target stock
-                     harvest> = 0
-                     co2 supply> = 0
-
-
-    */
+    // (Pre): treePopulation> = 0; ageStructure != NULL; health> = 0.25 && health <= 1; targetStock >= 0
+    //        maxTargetStock >= targetStock; harvest >= 0; co2Stock >= 0; soilQuality >= 0 && soilQuality <= 1;
+    //        stability >= 0 && stability <= 1; waterStock >= 0 && waterStock <= 1; hoursOfSunshine >= 0;
+    //        speciesStructure != NULL; wolves >= 0; deer >= 0; visitors >= 0
+    // (Post): stores all the values given to the constructor in this instance of forest
     public Forest(double treePopulation, HashMap<Integer, Double> ageStructure, double health, double targetStock,
                   double maxTargetStock, double harvest, double co2Stock, double soilQuality, double stability,
                   double waterStock, double hoursOfSunshine, HashMap<Tree, Double> speciesStructure, int wolves, int deer,
@@ -87,7 +70,12 @@ public class Forest {
         this.visitors = visitors;
     }
 
-    // assigns a forest type
+    // BAD: using static checks increases the object coupling, although it would not be necessary.
+    //      It would be more precise to calculate the type of forest dynamically. These calculations
+    //      ended up being this way because it would be more simple.
+
+    // (Post): assigned a forestType to the forest based on the speciesStructure, based on the portion of the trees.
+    //         If no forest cannot be assigned to a special kind of forest, it is set to "other"
     public void calcForestType() {
         double beech = 0;
         double blackPine = 0;
@@ -96,19 +84,19 @@ public class Forest {
         double spruceTree = 0;
         for (Map.Entry<Tree, Double> t : speciesStructure.entrySet()) {
             switch (t.getKey().getTreeType()) {
-                case Beech:
+                case "Beech":
                     beech = t.getValue();
                     break;
-                case BlackPine:
+                case "BlackPine":
                     blackPine = t.getValue();
                     break;
-                case OakTree:
+                case "OakTree":
                     oakTree = t.getValue();
                     break;
-                case ScotsPine:
+                case "ScotsPine":
                     scotsPine = t.getValue();
                     break;
-                case SpruceTree:
+                case "SpruceTree":
                     spruceTree = t.getValue();
                     break;
 
@@ -129,29 +117,31 @@ public class Forest {
         if (forestType == null) forestType = ForestType.Other;
     }
 
+    //(Post): Returned true if there is only one species of trees in the forest. Returned false otherwise.
     public boolean calcMonoculture() {
         return speciesStructure.size() == 1;
     }
 
-    //simulates the animals wolf and deer
+    //(Post): count of wolves and deer is increased or decreased based on mathematical calculations
     public void simulateAnimalActivity() {
-        //System.out.println("Im here: wolves:" + wolves + ", deer:" + deer);
-        if (wolves >= deer) { //if there are more wolves than deer, 40% of the wolves starve to death because they cant find any prey
+
+        if (wolves >= deer) {
             wolves = (int) Math.floor(wolves * 0.6);
         } else {
-            deer = deer - wolves; //wolves eat the wolves
-            wolves *= 2 + 1; //wolves replroduce
-            if (deer >= 1000) { //if more than 1 000, then there is a overpopulation of deer and they cant reproduce and 20% and another 100 starve to death
+            deer = deer - wolves;
+            wolves *= 2 + 1;
+            if (deer >= 1000) {
                 deer = (int) Math.floor(deer * 0.8 - 100);
             } else {
-                deer *= deer + 1; // deer exponentialy reproduce
+                deer *= deer + 1;
             }
         }
     }
 
-    //updates the tree state of the forest
+    // (Post): updated the tree population of the forest by the given value but only by the full value
+    //      if possible. Otherwise, it will be increased/decreased by the fraction of the value possible.
     public void treeGrowth(double value) {
-        // The flag is used to decide whether the value should be adjusted
+
         boolean flag = false;
         if (value > 0) {
             if (treePopulation < targetStock) {
@@ -165,7 +155,7 @@ public class Forest {
             }
             flag = true;
         }
-        //Adjust proportions evenly
+
         if (flag) {
             treePopulation += value;
 
@@ -180,7 +170,7 @@ public class Forest {
                             entry.setValue(0.0);
                         else
                             entry.setValue(entry.getValue() - value / treePopulation * entry.getValue());
-                    //avoid rounding errors
+
                     if (entry.getKey() != 0 && entry.getValue() < 0)
                         entry.setValue(0.0);
                 }
@@ -188,16 +178,22 @@ public class Forest {
         }
     }
 
-    // adjusts the age structure (n + 1)
+    // BAD: Since all the Trees in the forest have different lifespans (since task 2) it isn't correct
+    //           to just assume that every tree dies at the age of 250. This decreases the cohesion. The trees
+    //           dying of old age should rather be determined by the proportions of the corresponding trees
+    //           and the instance of this forest and their maximum age. This probably happened due to
+    //           different views of the forest and the trees of the persons implementing them.
+    // (Pre): loss >= 0 && loss <= 1
+    // (Post): increases the age structure of all tress by one and updates the value
+    //         considering the loss and adding it to the new trees (age 0) and
+    //          removing the difference from loss from the other age groups.
+    //          Also removes all trees older than 250.
     public void increaseAge(double loss) {
-        //Create a copy of the map so that new pairs can be inserted
         Map<Integer, Double> temp = new HashMap<>();
         double sum = 0;
         for (Map.Entry<Integer, Double> entry : ageStructure.entrySet()) {
-            //Set proportion of trees of age 0 to failure
             if (entry.getKey() == 0) {
                 if (entry.getValue() != 0) {
-                    //to avoid rounding errors
                     if ((entry.getValue() * (1 - loss)) > 0) {
                         sum += entry.getValue() * (1 - loss);
                         temp.put(1, sum);
@@ -206,14 +202,12 @@ public class Forest {
                 }
                 temp.put(0, loss);
                 sum += loss;
-            } else if (entry.getKey() == 250) { //Trees can live a maximum of 250 years
+            } else if (entry.getKey() == 250) {
                 temp.put(0, temp.getOrDefault(0, 0.0) + entry.getValue());
             } else {
-                //Adjust all other ages
                 int alter = entry.getKey();
                 double share = entry.getValue();
                 if (share > 0)
-                    //avoid rounding errors
                     if (sum < 1) {
                         if ((share * (1 - loss)) < 0)
                             temp.put(alter + 1, 0.0);
@@ -227,8 +221,6 @@ public class Forest {
                     }
             }
         }
-
-        // to avoid any rounding errors
         sum = 0;
         for (Map.Entry<Integer, Double> entry : temp.entrySet()) {
             sum += entry.getValue();
@@ -242,13 +234,13 @@ public class Forest {
             temp.put(0, 1.0);
         }
 
-
         ageStructure.putAll(temp);
     }
 
 
-    // adjusts the target stock by the given value
-    // precondition value> = 0
+    // (Pre): value >= 0
+    // (Post): updates the target stock by the value value if possible otherwise sets it to the max target stock
+    //         of this instance.
     public void increaseTargetStock(double value) {
         if (targetStock + value < maxTargetStock)
             targetStock += value;
@@ -256,8 +248,8 @@ public class Forest {
             targetStock = maxTargetStock;
     }
 
-    //
-    // adjusts the Co2 supply by the given value
+
+    // (Post): updates the co2-stock by the value stock. If the stock drops below 0 it will be set to 0.
     public void co2Adjust(double stock) {
         if (co2Stock + stock < 0)
             co2Stock = 0;
@@ -268,10 +260,13 @@ public class Forest {
             co2Stock = 0;
     }
 
+    // (Post): returns the tree population stored in this instance.
     public double getTreePopulation() {
         return treePopulation;
     }
 
+    // (Post): sets the tree population in this instance to the value treePopulation. In case it drops below
+    //         0 it will be set to 0.
     public void setTreePopulation(double treePopulation) {
         if (this.treePopulation + treePopulation < 0 || !(this.treePopulation + treePopulation >= 0))
             this.treePopulation = 0;
@@ -279,7 +274,7 @@ public class Forest {
             this.treePopulation = treePopulation;
     }
 
-    // this depends on the forestType: 0 worst; 1 best
+    // (Post): calculates the soil and returns it with a value between 0 and 1.
     public void calcSoil() {
         switch (getForestType()) {
             case BeechOak:
@@ -302,20 +297,19 @@ public class Forest {
         }
     }
 
-    // 1 = best; 0 = worst
+    // (Post): calculates the water stock and updates the stored value with a value between 0 and 1.
     public void calcWaterstock(){
         calcSoil();
         calcStability();
 
-        //scale amount of sun hours down to 0 to 1
         double scaledSunHours = hoursOfSunshine/(12*365);
 
-        //the water stock is calculated with the average of the stability, soil and the sun hours
         setWaterStock((stability+soilQuality+scaledSunHours)/3);
     }
 
 
-    // 1 = best; 0 = worst
+    // (Post): calculates the stability and updates the stored value with a value between 0 and 1 considering
+    //         the current age structure.
     public void calcStability() {
         double youngForestFactor = 0;
         double averageAge = 0;
@@ -327,7 +321,7 @@ public class Forest {
         for (int i = (int) averageAge; i < ageStructure.size(); i++) {
             proportionOfOld += ageStructure.get(i);
         }
-        //if the forest contains more young wood the stability is higher
+
         if (proportionOfOld < .5)
             youngForestFactor = 1;
         else if (proportionOfOld < .7)
@@ -340,88 +334,119 @@ public class Forest {
         calcSoil();
         setStability(getSoilQuality() * youngForestFactor);
     }
-
+    //(Pre): year > 0
+    //(Post): saved a copy of this Forest to the History HashMap for statistics
     public void makeHistoryEntry(int year) {
         history.put(year, new Forest(this.treePopulation, null, this.health, this.targetStock, this.maxTargetStock,
                 this.harvest, this.co2Stock, this.soilQuality, this.stability, this.waterStock, this.hoursOfSunshine,
                 null, this.wolves, this.deer, this.visitors));
     }
 
+    // BAD: Here we used a lot of getters and setters which leads to a reduction of object coupling.
+    //           Instead we should have used method like adjustCo2-stock which takes the current
+    //           value into account the changes it appropriately. This probably happened
+    //           because the original plan was that the models and the forest would be implemented by different
+    //           persons and since the person who implemented the forest didn't know exactly how the
+    //           person implementing the models wanted to use the forest he happened to implement a lot of
+    //           getters and setters.
+    //(Post):returned the history Map
     public HashMap<Integer, Forest> getHistory() {
         return history;
     }
 
+    //(Post):returned the ageStructure Map
     public HashMap<Integer, Double> getAgeStructure() {
         return ageStructure;
     }
 
+    //(Post):returned the health value
     public double getHealth() {
         return health;
     }
 
+    //(Pre):1 >= health >= 0
+    //(Post):sets the health value
     public void setHealth(double health) {
         this.health = health;
     }
 
+    //(Post):returned value of targetStock
     public double getTargetStock() {
         return targetStock;
     }
 
+    // (Post): sets the target stock to the value targetStock. In case it drops below 0 it will be set to 0
+    //         and if it gets above the max target stock it will be set to maxTargetStock.
     public void setTargetStock(double targetStock) {
         if (targetStock < 0)
             this.targetStock = 0;
         else this.targetStock = Math.min(targetStock, maxTargetStock);
     }
 
+    //(Post):returned value of maxTargetStock
     public double getMaxTargetStock() {
         return maxTargetStock;
     }
 
+    //(Post):returned amount of harvest
     public double getHarvest() {
         return harvest;
     }
 
+    //(Pre): harvest >=0
+    //(Post): sets the value of the harvest in this forest
     public void setHarvest(double harvest) {
         this.harvest = harvest;
     }
 
+    //(Pre): zielbestand >=0
+    //(Post):sets the maxTargetStock
     public void setMaxTargetStock(double zielbestand) {
         this.maxTargetStock = zielbestand;
     }
 
+    //(Pre):co2Vorrat >= 0
+    //(Post):sets amount co2Stock
     public void setco2Vorrat(double co2Vorrat) {
         this.co2Stock = co2Vorrat;
     }
 
+    //(Post):returned amount of co2Stock
     public double getco2Vorrat() {
         return this.co2Stock;
     }
 
+    //(Post): sets number of visitors
     public void setVisitors(int visitors) {
         this.visitors = Math.max(visitors, 0);
     }
 
+    //(Post):returned amount of visitors in this forest
     public int getVisitors() {
         return this.visitors;
     }
 
+    //(Post):returned value of soilQuality
     public double getSoilQuality() {
         return soilQuality;
     }
 
+    //(Pre):1 >= soilQulity >= 0
+    //(Post):sets value of soilQuality
     public void setSoilQuality(double soilQuality) {
         this.soilQuality = soilQuality;
     }
 
-
+    //(Post):returned the value of stability between 0 and 1
     public double getStability() {
         return stability;
     }
-
+    //(Post):returned the HashMap with the species
     public HashMap<Tree, Double> getSpeciesStructure() {
         return this.speciesStructure;
     }
 
+    // (Post): sets the stability to the value stability in an interval between 0 and 1.
     public void setStability(double stability) {
         if (stability < 0)
             this.stability = 0;
@@ -430,11 +455,12 @@ public class Forest {
         else
             this.stability = stability;
     }
-
+    //(Post):returned amount of water
     public double getWaterStock() {
         return waterStock;
     }
 
+    // (Post): sets the stability to the value stability in an interval between 0 and 1.
     public void setWaterStock(double waterStock) {
         if (waterStock < 0)
             this.waterStock = 0;
@@ -444,29 +470,35 @@ public class Forest {
             this.waterStock = waterStock;
     }
 
+    //(Post):sets amount of hours of sun, but sets 0 if it is negative
     public void setHoursOfSunshine(double hoursOfSunshine) {
         this.hoursOfSunshine = Math.max(hoursOfSunshine, 0);
     }
 
+    //(Post):returned amount of hours of sun
     public double getHoursOfSunshine() {
         return hoursOfSunshine;
     }
 
+    //(Post):returned amount of wolves
     public long getWolfs() {
         return wolves;
     }
 
+    //(Post):returned amount of deer
     public long getDeer() {
         return deer;
     }
 
+    //(Post):returned forestType
     public ForestType getForestType() {
         return forestType;
     }
 
+    //(Post):returned all statistics of the given tree and also displayed the HashMap of the age distribution between
+    //the trees in the Forest
     @Override
     public String toString() {
-
         StringBuilder builder = new StringBuilder();
         builder.append("Area of the forest: ").append(area).append("ha\n");
         builder.append("Treepopulation: ").append(treePopulation).append("fm\n");
@@ -491,7 +523,8 @@ public class Forest {
         return builder.toString();
     }
 
-
+    // (Pre): years > 0 && years <= bygone years in simulation && history.size == years
+    // (Post): A presentation for the average of the given years of the tree data
     public String historyAverage(int years) {
         double averageTreePopulation = 0;
         double averageHealth = 0;

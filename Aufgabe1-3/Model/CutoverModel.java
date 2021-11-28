@@ -1,44 +1,51 @@
-package Model;
-
-import Forest.*;
-import Tree.*;
-import Catastrophe.*;
-
 import java.util.Map;
 
 public class CutoverModel extends FarmedModel {
+
+    // (Pre): forest != NULL; loss >= 0 && loss <= 1; growth >= 0 && growth <= 1
+    // (Post): sets the values: forest, lossFactor, growthFactor, loss and growth of this factor and
+    //         also sets the max target stock to 350
     public CutoverModel(Forest forest, double loss, double growth) {
         super(forest, loss, growth);
     }
 
+
+    // (Post): calculates and updates the tree population (and age structure) of the forest stored in this instance
+    //      and might also invoke a harvest because of the loss or the tree population of the corresponding year
+    //      which has additional impact on the population of the forest. Harvesting
+    //      will cut over all trees older than 0.
+    // (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
+    //              provide correct calculations: calcAgeStructure(), calcHealth(), calcTargetStock(),
+    //              calcCo2Stock()
     @Override
     public void calcStock(){
-        // Share of stock for scaling the harvest for the loss
-        // Exception for first year; Therefore the if is needed
         if(getForest().getTreePopulation() > 0)
             stock = this.getForest().getTreePopulation();
-        // harvest Everything older than 0 - Because the rest of the forest that's
-        // remaining is in danger of getting lost
+
         if (getLoss() <= 0.3) {
             if (getLoss() >= 0.1) {
-                farmOlderThan(1, 0.9); //take almost everything out of the forest
-                harvestTaken += (getLoss());// the whole natural loss will be harvested
+                farmOlderThan(1, 0.9);
+                harvestTaken += (getLoss());
                 this.getForest().setHarvest(this.getForest().getHarvest() + harvestTaken);
             }
         }
-        // if the tree population is bigger than 1/3 of the max stock it will get harvested
+
         else if (forest.getTreePopulation() > forest.getMaxTargetStock()/3) {
             farmOlderThan(1, 0.9);
         }
-        this.getForest().treeGrowth(getGrowth()); // the natural loss-growth factor
+        this.getForest().treeGrowth(getGrowth());
 
-        // add taken wood to loss
+
         setLoss(getLoss()+((harvestTaken /this.stock)));
     }
 
+    //  (Post): calculates and sets additional influence factors (some by calling other functions)
+    //  (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
+    //               provide correct calculations: calcStock(), calcAgeStructure(), calcHealth(),
+    //               calcTargetStock(), calcCo2Stock()
     @Override
     public void calcSpecificFactors() {
-        // bad soil has twice the impact on the loss on this model
+
         forest.calcSoil();
         if(forest.getSoilQuality()<0.5){
             setLossFactor(lossFactor+lossFactor*((1-forest.getSoilQuality())));
@@ -46,6 +53,8 @@ public class CutoverModel extends FarmedModel {
         }
     }
 
+    // (Post): calculates the impact of following catastrophes on the forest and updates affected values:
+    //      Fire, Freeze, Infestation, Moor, Storm - for Fire it calls the method of the super() class
     @Override
     protected void catastropheHandler(Catastrophe t) {
         double resist = 0;
@@ -54,11 +63,6 @@ public class CutoverModel extends FarmedModel {
                 resist += entry.getKey().getFreezeResistance();
             }
             resist /=forest.getSpeciesStructure().size();
-
-            // the impact of freeze is very dependent of
-            // the last harvest since less tress are affected if the last harvest
-            // is closer and also since there are likely to be much fewer
-            // trees around the impact is less than in the farmed model.
 
             setLossFactor(lossFactor+(lossFactor/2*t.getDamageFactor()*(1-resist)));
             setGrowthFactor(growthFactor);
@@ -70,14 +74,10 @@ public class CutoverModel extends FarmedModel {
         }
         if(t.getCatastropheType() == CatastropheType.Infestation){
 
-            //Infestation causes the a harvest of 1/3 of all tress older than 0, since they might die
             infestationFarm(1,(double) 1/3,3);
 
-            // add taken wood to loss
             setLoss(getLoss()+((harvestTaken /this.stock)));
 
-            // the co2-stock is impacted by the amount of
-            // harvest
             if (getLoss() >= 0.2) {
                 co2Impact((1 - (getLoss()-(harvestTaken/this.stock))));
             }
@@ -91,8 +91,6 @@ public class CutoverModel extends FarmedModel {
             }
             resist /=forest.getSpeciesStructure().size();
 
-            // the impact of a moore is depending very much on the
-            // current tree population and here also on the soil quality
             forest.calcSoil();
             setLossFactor(lossFactor+lossFactor*((forest.getSoilQuality()/13)*forest.getTreePopulation()/forest.getTargetStock())*t.getDamageFactor()*(1-resist));
             setGrowthFactor(growthFactor);
@@ -108,10 +106,6 @@ public class CutoverModel extends FarmedModel {
             }
             resist /=forest.getSpeciesStructure().size();
 
-            // storms also depend on the date of the last harvest
-            // since there are less trees close to one another after
-            // a harvest the "domino effect" is very unlikely but possible
-            // the impact on the co2-stock is not very high
 
             setLossFactor(getLoss()*(yearsWithoutHarvest/16.0)*t.getDamageFactor()*(1-resist));
             setGrowthFactor(growthFactor);
@@ -120,11 +114,6 @@ public class CutoverModel extends FarmedModel {
 
             forest.treeGrowth(getGrowth());
 
-            // after a storm there is a chance for an Infestation
-            // because there is laying a lot of dead wood and leaves
-            // around. The shorter the distance to the last
-            // harvest the higher the chance (since there are more
-            // free spaces for dead wood)
             if(Math.random()<0.1+(yearsWithoutHarvest/16.0))
                 catastropheHandler(new InfestationCatastrophe(1.4));
         }
@@ -132,6 +121,8 @@ public class CutoverModel extends FarmedModel {
             super.catastropheHandler(t);
     }
 
+    // (Post): returns a string with the name of the Model
+    //      and the details of the forest stored in this instance
     @Override
     public String toString() {
         return "-- Cutover Model: --\n" + getForest();

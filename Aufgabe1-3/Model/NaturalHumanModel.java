@@ -1,38 +1,34 @@
-package Model;// This model is very close to the NaturalModel.
-// Only difference is that there are more humans and they create footpaths for themselves.
-// Since the forest is not meant for humans there is going to be no harvest and it
-// doesn't matter if footpaths disappear due to growth
-
-import Forest.*;
-import Catastrophe.*;
-
 public class NaturalHumanModel extends NaturalModel{
+
+    // (Pre): forest != NULL; lossFactor >= 0 && lossFactor <= 1; growthFactor >= 0 && growthFactor <= 1
+    // (Post): sets the values: forest, lossFactor, growthFactor, loss and growth of this factor.
     public NaturalHumanModel(Forest forest, double lossFactor, double growthFactor) {
         super(forest, lossFactor, growthFactor);
     }
 
-    // calculate new tree stock
+    // (Post): calculates the tree population of the forest stored in this instance considering the growth of the
+    //      corresponding year and updates the value.
+    // (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
+    //              provide correct calculations: calcAgeStructure(), calcHealth(), calcTargetStock(),
+    //              calcCo2Stock()
     @Override
     public void calcStock() {
-        // the footpaths reduce or increase (if the forest regrows over the footpath)
-        // the targetStock. There are two separate calculations
-        // because there could be created a new footpath and overgrown an other footpath at the
-        // same time.
         if(Math.random()<0.05)
             forest.setTargetStock(forest.getTargetStock()-(forest.getTargetStock()*0.2));
         if(Math.random()<0.05)
             forest.setTargetStock(forest.getTargetStock()+(forest.getTargetStock()*0.2));
-        // the sidewalks impact the growth by a very small factor
         this.getForest().treeGrowth(getGrowth()-(getGrowth()*0.07));
     }
 
+    //  (Post): calculates and sets additional influence factors (some by calling other functions) and some
+    //       by calling the method of the super class
+    //  (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
+    //               provide correct calculations: calcStock(), calcAgeStructure(), calcHealth(),
+    //               calcTargetStock(), calcCo2Stock()
     @Override
     public void calcSpecificFactors() {
-        // since the wolves and deers have the same impact as in the Natural Model.
         super.calcSpecificFactors();
 
-        // the visitors have an higher impact on the loss, since they may
-        // leave trash behind
         if(forest.getVisitors()>1000){
             setLossFactor(lossFactor+(lossFactor*0.04));
             setGrowthFactor(growthFactor);
@@ -53,15 +49,11 @@ public class NaturalHumanModel extends NaturalModel{
 
     }
 
+    // (Post): calculates the impact of following catastrophes on the forest and updates affected values:
+    //      Fire, Freeze, Infestation, Moor, Storm - the impact of this compared to the super() class
+    //      only differs with a higher chance for causing an InfestationCatastrophe
     @Override
     protected void catastropheHandler(Catastrophe t) {
-        // the impact is always pending of the loss or growth
-        // the impact is very similar to the one of the
-        // Natural, only storms have a higher chance of
-        // causing an infestation, since sticks could lay on the ground
-        // therefore two different Infestations could occur if here and
-        // in the super class occurs an infestation.
-        // also the impact of the possible infestation is higher
         super.catastropheHandler(t);
 
         if(Math.random()<0.1)
@@ -70,7 +62,8 @@ public class NaturalHumanModel extends NaturalModel{
 
     }
 
-
+    // (Post): returns a string with the name of the Model
+    //      and the details of the forest stored in this instance
     @Override
     public String toString() {
         return "-- Natural with humans Model: --\n" + getForest();
