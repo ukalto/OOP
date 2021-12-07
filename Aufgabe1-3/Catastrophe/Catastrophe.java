@@ -1,3 +1,5 @@
+package Catastrophe;
+
 public abstract class Catastrophe {
     // (I) catastropheType != null
     private CatastropheType catastropheType;

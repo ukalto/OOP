@@ -441,19 +441,4 @@ public class Test {
         System.out.println("is ContinentalClimate: " + q.testIsContintentalClimate());
         System.out.println("is tree: " + q.testIsTree());
     }
-
-    /*
-    Allocation of responsibilities:
-        Daniel Vercimak:   designed project structure; implemented Domestic, ContinentalClimate,
-                           CarpinunusBetulus, FagusSylvatica; added test for CarpinunusBetulus;
-                           added comments Domestic, ContinentalClimate,
-                           CarpinunusBetulus, FagusSylvatica;
-        Maximilian Gaber:  designed project structure; implemented tree, lightDemanding, fagaceae;
-                           added test for FagusSylvatica; added comments for tree, lightDemanding, fagaceae
-        Nico Lehegzek:     designed project structure; implemented Quercus, QuercusPatraea and QuercusRobur;
-                           added tests for QuercusPatraea and QuercusRobur; added the static methods in main;
-                           added comments why Quercus, QuercusPatraea and QuercusRobur aren't subtypes of other
-                           interfaces/classes; added conditions in most of the classes for methods and object
-                           variables
-     */
 }

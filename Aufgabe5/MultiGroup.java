@@ -1,30 +1,33 @@
 import java.util.Iterator;
 
-public class MultiGroup<X,Y> implements Group<X,Y> {
+public class MultiGroup<X, Y> implements Group<X, Y> {
 
-    private LinkedList<X> list;
+    // (I): list != null
+    private final LinkedList<X> list;
+
+    // (I): a != null
     private final Group<? extends Y, ?> a;
-    private final Relation<? super X,? super Y> r;
+    // (I): r != null
+    private final Relation<? super X, ? super Y> r;
 
     // (Inv): relatedCount >= 0
     // (Hist-c): can only be increased one by one
     private int relatedCount;
 
-    //TODO: important: X and Y are maybe not correct yet (missing extends/super/wildcards)
-
     // (Pre): a != null; r != null
-    // (Post): sets this.a to a and this. r to r
-    public MultiGroup(Group<? extends Y, ?> a, Relation<? super X,? super Y> r){
+    // (Post): sets this.a to a; this. r to r; relatedCount to 0; this.list is initialized
+    public MultiGroup(Group<? extends Y, ?> a, Relation<? super X, ? super Y> r) {
         this.a = a;
         this.r = r;
         relatedCount = 0;
+        this.list = new LinkedList<X>();
     }
 
     // (Pre): x != null
     // (Post): adds x to this.list if this.list doesn't contain x already
     @Override
     public void add(X x) {
-        if(!list.contains(x))
+        if (!list.contains(x))
             list.add(x);
     }
 
@@ -34,9 +37,8 @@ public class MultiGroup<X,Y> implements Group<X,Y> {
     @Override
     public boolean related(X x, Y y) {
         this.relatedCount++;
-        return this.r.related(x,y);
+        return this.r.related(x, y);
     }
-
 
     // (Post): returns the number of related calls made by this object
     @Override
@@ -44,50 +46,70 @@ public class MultiGroup<X,Y> implements Group<X,Y> {
         return this.relatedCount;
     }
 
-    // (Post): returns an Iterator<X> that returns all x's that are related(x,y) to at least one y in a
+    // (Post): returns all elements of x in container which are related to at least one y
+    //         using related(x,y)
     @Override
     public Iterator<X> iterator() {
         return new Iterator<X>() {
 
-            Node<X> head = list.getHead();
-            Node<X> previous = null;
+            private Node<X> head = list.getHead();
+            private Node<X> nextCheck = list.getHead();
+            private Node<X> previous = null;
+            private boolean nextCalled = false;
+            private boolean alreadyCalled = false;
 
             @Override
             public boolean hasNext() {
-                Iterator<? extends Y> it = a.iterator();
-                while (it.hasNext()){
-                    Y y = it.next();
-                    if(r.related(head.getValue(),y))
-                        return true;
+                if (nextCheck == null) {
+                    nextCheck = head;
+                    return false;
                 }
 
-                return false;
+                Iterator<? extends Y> it = a.iterator();
+                while (it.hasNext()) {
+                    Y y = it.next();
+                    if (related(nextCheck.getValue(), y)) {
+                        nextCheck = head;
+                        return true;
+                    }
+
+                }
+                nextCheck = nextCheck.getNext();
+                return hasNext();
             }
 
             @Override
             public X next() {
-                if(!hasNext())
-                    return null;
+                if (!hasNext())
+                    throw new IllegalStateException();
 
-                    Iterator<? extends Y> it = a.iterator();
-                    while (it.hasNext()){
-                        Y y = it.next();
-                        if(r.related(head.getValue(),y)){
-                            previous = head;
-                            head = head.getNext();
-                            return head.getValue();
-                        }
+                nextCalled = true;
+                alreadyCalled = false;
+
+                Iterator<? extends Y> it = a.iterator();
+                while (it.hasNext()) {
+                    Y y = it.next();
+                    if (r.related(head.getValue(), y)) {
+                        previous = head;
+                        head = head.getNext();
+                        nextCheck = head;
+                        return previous.getValue();
                     }
 
-                return null;
+                }
+                head = head.getNext();
+                return next();
             }
 
             @Override
             public void remove() {
-                if(!(previous == null)){
-                    list.remove(previous.getValue());
-                    previous = null;
+                if (!nextCalled || alreadyCalled) {
+                    throw new java.lang.IllegalStateException();
                 }
+                alreadyCalled = true;
+                nextCalled = false;
+                list.remove(previous.getValue());
+                previous = null;
             }
         };
     }

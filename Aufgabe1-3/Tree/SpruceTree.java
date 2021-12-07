@@ -1,4 +1,6 @@
-public class SpruceTree extends Tree{
+package Tree;
+
+public class SpruceTree extends Tree {
     // (Pre): waterStock >= 0 && waterStock <= 100
     // (Post): A SpruceTree is created with the max height 15, tree type SpruceTree, min temp 0, max temp 30
     // max age 185, fire resistance 0.02, freeze 0-1, infestation resistance 0-1, moor resistance 0.2,

@@ -1,3 +1,5 @@
+package Tree;
+
 public class BeechTree extends Tree {
     // (Pre): waterStock >= 0 && waterStock <= 100
     // (Post): A BeechTree is created with the max height 45, tree type Beech, min temp 30, max temp 50

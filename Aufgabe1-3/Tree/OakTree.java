@@ -1,4 +1,6 @@
-public class OakTree extends Tree{
+package Tree;
+
+public class OakTree extends Tree {
     // (Pre): waterStock >= 0 && waterStock <= 100
     // (Post): A OakTree is created with the max height 35, tree type OakTree, min temp 10, max temp 30
     //  max age 210, fire resistance 0-1, freeze 0-1, infestation resistance 0.25, moor resistance 0.25,

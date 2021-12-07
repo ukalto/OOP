@@ -1,3 +1,5 @@
+package Forest;
+
 public enum ForestType {
     BeechOak,
     BlackPineOak,

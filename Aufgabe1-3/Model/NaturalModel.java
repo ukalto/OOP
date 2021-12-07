@@ -1,5 +1,10 @@
+package Model;
+
 import java.util.Map;
 
+import Forest.*;
+import Tree.*;
+import Catastrophe.*;
 
 public class NaturalModel extends BaseFarmingModel {
 
@@ -10,7 +15,8 @@ public class NaturalModel extends BaseFarmingModel {
     }
 
     // (Post): calculates the tree population of the forest stored in this instance considering the growth of the
-    //      corresponding year and updates the value.
+    //      corresponding year and updates the value - increases proportion of young trees and might reduce prportion
+    //      of older ones (all values still betwenn 0 and 1).
     // (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
     //              provide correct calculations: calcAgeStructure(), calcHealth(), calcTargetStock(),
     //              calcCo2Stock()
@@ -21,7 +27,7 @@ public class NaturalModel extends BaseFarmingModel {
 
 
     // (Post): calculates the CO2 stock of the forest considering the loss and growth stored in this instance
-    //      and updates the value.
+    //      and updates the value - value for co2-stock still for sure >= 0.
     @Override
     public void calcCo2Stock() {
         this.getForest().co2Adjust(getGrowth());
@@ -33,6 +39,7 @@ public class NaturalModel extends BaseFarmingModel {
     }
 
     //  (Post): calculates and sets additional influence factors (some by calling other functions)
+    //          does affect lossFactor (now between 0 and 1) and growthFactor (now between 0 and 1)
     //  (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
     //               provide correct calculations: calcStock(), calcAgeStructure(), calcHealth(),
     //               calcTargetStock(), calcCo2Stock()
@@ -57,6 +64,8 @@ public class NaturalModel extends BaseFarmingModel {
 
     // (Post): calculates the impact of following catastrophes on the forest and updates affected values:
     //      Fire, Freeze, Infestation, Moor, Storm
+    //      All of them decreases co2-stock - still between 0 and 1; increases lossFactor - still between 0 and 1
+    //                  and increases growthFactor - still between 0 and 1
     @Override
     protected void catastropheHandler(Catastrophe t) {
 
@@ -138,7 +147,7 @@ public class NaturalModel extends BaseFarmingModel {
     }
 
     // (Post): returns a string with the name of the Model
-    //      and the details of the forest stored in this instance
+    //      and the details of the forest stored in this instance - never empty
     @Override
     public String toString() {
         return "-- Natural Model: --\n" + getForest();

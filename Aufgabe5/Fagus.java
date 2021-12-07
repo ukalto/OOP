@@ -1,8 +1,8 @@
-public class Fagus implements Tree{
-    // >= 0
-    private double height;
-    // (I) 0-1
-    private double shadowLeaves;
+public class Fagus implements Tree {
+    // (I): >= 0
+    private final double height;
+    // (I): 0-1
+    private final double shadowLeaves;
 
     // (Pre): height >= 0 && shadowLeaves >= 0 && shadowLeaves <= 1
     // (Post): sets the this.height = height and this.shadowLeaves = shadowLeaves

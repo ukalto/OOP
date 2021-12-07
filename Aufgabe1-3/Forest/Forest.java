@@ -1,23 +1,28 @@
+package Forest;
+
 import java.util.HashMap;
 import java.util.Map;
+
+import Tree.*;
+
 // GOOD: Minimal object coupling because the calculations are mostly independent of other classes.The thought behind
 //this was that the attribute needed for the calculations should be stored in the same class where they are mostly used.
 public class Forest {
     //(I): area=1
     private final int area = 1;
-    //(I): treePopulation >=0
+    //(I): treePopulation >=0 && treePopulation <= 250
     private double treePopulation;
     //(I): ageStructure != NULL
     private final HashMap<Integer, Double> ageStructure;
     //(I): 1 >= health >=0
     private double health;
-    //(I): targetStock >=0
+    //(I): targetStock >=0 && targetStock <= maxTargetStock
     private double targetStock;
-    //(I): maxTargetStock >=0
+    //(I): maxTargetStock >= targetStock
     private double maxTargetStock;
     //(I): harvest >=0
     private double harvest;
-    //(I): co2Stock >=0
+    //(I): co2Stock >=0 && co2Stock <=100
     private double co2Stock;
     //(I): speciesStructure != NULL
     private final HashMap<Tree, Double> speciesStructure;
@@ -27,16 +32,16 @@ public class Forest {
     private double stability;
     //(I): 1 >= waterStock >=0
     private double waterStock;
-    //(I): hoursOfSunshine >=0
+    //(I): hoursOfSunshine >=0 && hoursOfSunshine <= 8760
     private double hoursOfSunshine;
 
-    //(I): wolves >=0
+    //(I): wolves >=0 && wolves <= 1 000 000
     private int wolves;
 
-    //(I): deer >=0
+    //(I): deer >=0 && deer <= 998 000
     private int deer;
 
-    //(I): visitors >=0
+    //(I): visitors >=0 && visitors <= 100 000
     private int visitors;
 
     //(I): forestType != NULL
@@ -44,10 +49,10 @@ public class Forest {
     //(I): history != NULL
     private final HashMap<Integer, Forest> history = new HashMap<>();
 
-    // (Pre): treePopulation> = 0; ageStructure != NULL; health> = 0.25 && health <= 1; targetStock >= 0
-    //        maxTargetStock >= targetStock; harvest >= 0; co2Stock >= 0; soilQuality >= 0 && soilQuality <= 1;
-    //        stability >= 0 && stability <= 1; waterStock >= 0 && waterStock <= 1; hoursOfSunshine >= 0;
-    //        speciesStructure != NULL; wolves >= 0; deer >= 0; visitors >= 0
+    // (Pre): treePopulation >=0 && treePopulation <= 250; ageStructure != NULL; health> = 0.25 && health <= 1; targetStock >=0 && targetStock <= maxTargetStock
+    //        maxTargetStock >= targetStock; harvest >= 0; co2Stock >=0 && co2Stock <=100; soilQuality >= 0 && soilQuality <= 1;
+    //        stability >= 0 && stability <= 1; waterStock >= 0 && waterStock <= 1; hoursOfSunshine >=0 && hoursOfSunshine <= 8760;
+    //        speciesStructure != NULL; wolves >=0 && wolves <= 1 000 000; deer >=0 && deer <= 998 000; visitors >=0 && visitors <= 100 000
     // (Post): stores all the values given to the constructor in this instance of forest
     public Forest(double treePopulation, HashMap<Integer, Double> ageStructure, double health, double targetStock,
                   double maxTargetStock, double harvest, double co2Stock, double soilQuality, double stability,
@@ -260,7 +265,7 @@ public class Forest {
             co2Stock = 0;
     }
 
-    // (Post): returns the tree population stored in this instance.
+    // (Post): returns the tree population stored in this instance. treePopulation >=0 && treePopulation <= 250
     public double getTreePopulation() {
         return treePopulation;
     }
@@ -298,13 +303,13 @@ public class Forest {
     }
 
     // (Post): calculates the water stock and updates the stored value with a value between 0 and 1.
-    public void calcWaterstock(){
+    public void calcWaterstock() {
         calcSoil();
         calcStability();
 
-        double scaledSunHours = hoursOfSunshine/(12*365);
+        double scaledSunHours = hoursOfSunshine / (12 * 365);
 
-        setWaterStock((stability+soilQuality+scaledSunHours)/3);
+        setWaterStock((stability + soilQuality + scaledSunHours) / 3);
     }
 
 
@@ -334,6 +339,7 @@ public class Forest {
         calcSoil();
         setStability(getSoilQuality() * youngForestFactor);
     }
+
     //(Pre): year > 0
     //(Post): saved a copy of this Forest to the History HashMap for statistics
     public void makeHistoryEntry(int year) {
@@ -359,7 +365,7 @@ public class Forest {
         return ageStructure;
     }
 
-    //(Post):returned the health value
+    //(Post):returned the health value. 1 >= health >= 0
     public double getHealth() {
         return health;
     }
@@ -383,7 +389,7 @@ public class Forest {
         else this.targetStock = Math.min(targetStock, maxTargetStock);
     }
 
-    //(Post):returned value of maxTargetStock
+    //(Post):returned value of maxTargetStock. maxTargetStock >= targetStock
     public double getMaxTargetStock() {
         return maxTargetStock;
     }
@@ -411,7 +417,7 @@ public class Forest {
         this.co2Stock = co2Vorrat;
     }
 
-    //(Post):returned amount of co2Stock
+    //(Post):returned amount of co2Stock. co2Stock >=0 && co2Stock <=100
     public double getco2Vorrat() {
         return this.co2Stock;
     }
@@ -421,12 +427,12 @@ public class Forest {
         this.visitors = Math.max(visitors, 0);
     }
 
-    //(Post):returned amount of visitors in this forest
+    //(Post):returned amount of visitors in this forest. visitors >=0 && visitors <= 100 000
     public int getVisitors() {
         return this.visitors;
     }
 
-    //(Post):returned value of soilQuality
+    //(Post):returned value of soilQuality. 1 >= soilQuality >=0
     public double getSoilQuality() {
         return soilQuality;
     }
@@ -437,10 +443,11 @@ public class Forest {
         this.soilQuality = soilQuality;
     }
 
-    //(Post):returned the value of stability between 0 and 1
+    //(Post):returned the value of stability between 0 and 1.
     public double getStability() {
         return stability;
     }
+
     //(Post):returned the HashMap with the species
     public HashMap<Tree, Double> getSpeciesStructure() {
         return this.speciesStructure;
@@ -455,7 +462,8 @@ public class Forest {
         else
             this.stability = stability;
     }
-    //(Post):returned amount of water
+
+    //(Post):returned amount of water. 1 >= waterStock >=0
     public double getWaterStock() {
         return waterStock;
     }
@@ -475,22 +483,22 @@ public class Forest {
         this.hoursOfSunshine = Math.max(hoursOfSunshine, 0);
     }
 
-    //(Post):returned amount of hours of sun
+    //(Post):returned amount of hours of sun. hoursOfSunshine >=0 && hoursOfSunshine <= 8760
     public double getHoursOfSunshine() {
         return hoursOfSunshine;
     }
 
-    //(Post):returned amount of wolves
+    //(Post):returned amount of wolves. wolves >=0 && wolves <= 1 000 000
     public long getWolfs() {
         return wolves;
     }
 
-    //(Post):returned amount of deer
+    //(Post):returned amount of deer. deer >=0 && deer <= 998 000
     public long getDeer() {
         return deer;
     }
 
-    //(Post):returned forestType
+    //(Post):returned forestType. forestType != NULL
     public ForestType getForestType() {
         return forestType;
     }

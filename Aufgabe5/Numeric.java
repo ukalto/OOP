@@ -1,7 +1,7 @@
 public class Numeric implements Relation<Integer, Integer> {
-    // (I) > = 0
-    private int c;
-    // (I) >= 0
+    // (I): > = 0
+    private final int c;
+    // (I): >= 0
     // (Hist-c): can only be increased one by one
     private int invokedCounter;
 

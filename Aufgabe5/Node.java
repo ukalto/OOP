@@ -7,18 +7,24 @@ public class Node<X> {
 
     // (Pre): value != null
     // (Post): sets this.value to value; sets this.next to next; next might be null
-    public Node(X value, Node<X> next){
+    public Node(X value, Node<X> next) {
         this.value = value;
         this.next = next;
     }
 
     // (Post): returns the value stored in this Node
-    public X getValue(){return value;}
+    public X getValue() {
+        return value;
+    }
 
     // (Post): returns the next Node to which this Node references.
-    public Node<X> getNext(){return next;}
+    public Node<X> getNext() {
+        return next;
+    }
 
 
     // (Post): sets this.next to next; next might be null
-    public void setNext(Node<X> next){this.next = next;}
+    public void setNext(Node<X> next) {
+        this.next = next;
+    }
 }

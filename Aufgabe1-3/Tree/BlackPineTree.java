@@ -1,4 +1,6 @@
-public class BlackPineTree extends Tree{
+package Tree;
+
+public class BlackPineTree extends Tree {
     // (Pre): waterStock >= 0 && waterStock <= 100
     // (Post): A BlackPineTree is created with the max height 60, tree type Blackpine, min temp 20, max temp 40
     // max age 250, fire resistance 0-1, freeze 0-1, infestation resistance 0.2, moor resistance 0-1,

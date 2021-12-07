@@ -1,3 +1,5 @@
+package Catastrophe;
+
 public enum CatastropheType {
     Fire,
     Freeze,

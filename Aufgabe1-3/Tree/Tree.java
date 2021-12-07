@@ -1,4 +1,4 @@
-//GOOD: By using subtyping we were able to reduce the needed code by a lot. it is also easier to add
+package Tree;//GOOD: By using subtyping we were able to reduce the needed code by a lot. it is also easier to add
 //      new Subtypes of trees by creating new subclasses. It was necessary to make this class abstract to
 //      represent the real life. We implemented the trees this way, because we weren't sure how many trees
 //      we wanted to add exactly and this way it was easier to add new ones.

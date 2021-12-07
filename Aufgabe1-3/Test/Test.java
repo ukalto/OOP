@@ -1,10 +1,15 @@
+package Test;
+
 import java.util.*;
 
+import Forest.*;
+import Tree.*;
+import Catastrophe.*;
+import Model.*;
+
+
 public class Test {
-    /*Todo: Verbesserungsliste
 
-
-    */
     //(Post): runs the whole Application
     public static void main(String[] args) {
         int treePopulation = 0;
@@ -17,22 +22,22 @@ public class Test {
         int years = 1000;
         int visitors = 0;
         double sunhours = 0;
-        HashMap<Tree, Double> treeMap = new HashMap<>(){{
+        HashMap<Tree, Double> treeMap = new HashMap<>() {{
             put(new OakTree(0.8), 0.6);
             put(new BlackPineTree(0.3), 0.4);
         }};
 
-        HashMap<Tree, Double> treeMap2 = new HashMap<>(){{
+        HashMap<Tree, Double> treeMap2 = new HashMap<>() {{
             put(new OakTree(0.8), 1.0);
         }};
 
-        HashMap<Tree, Double> treeMap3 = new HashMap<>(){{
+        HashMap<Tree, Double> treeMap3 = new HashMap<>() {{
             put(new OakTree(0.8), 0.3);
             put(new SpruceTree(0.3), 0.3);
             put(new ScotsPineTree(0.2), 0.4);
         }};
 
-        HashMap<Tree, Double> treeMap4 = new HashMap<>(){{
+        HashMap<Tree, Double> treeMap4 = new HashMap<>() {{
             put(new BeechTree(0.7), 0.2);
             put(new SpruceTree(0.3), 0.4);
             put(new ScotsPineTree(0.2), 0.4);
@@ -122,7 +127,7 @@ public class Test {
         System.out.println("\nEnd of simulation");
     }
 
-    // (Post): returns an instance of Factors determined with random values 0-1
+    // (Post): returns an instance of Factors determined with random values 0-1 and the result is also between 0-1
     public static Factors calcFactors() {
         if (Math.random() < 0.03) {
             return new Factors(Math.random() * (1), (Math.random() * (1)));
@@ -131,26 +136,3 @@ public class Test {
         }
     }
 }
-
-
-/* NOTE: Responsibilities in the project:
- Daniel Vercimak:
- Task1: FarmedModel,small percentage of Forrest, parts of Test
- Task2: Updated the current Forrest, added the new Methods needed in Forrest, parts of Test,
-        in particular most random value generations.
- Task3: Added conditions(pre,post) to the methods I wrote. Added GOOD and BAD conditions in those classes.
-
- Maximilian Gaber:
- Task 3: Added (Pre) and (Post) conditions to all methods which I was responsible for. Furthermore, I have added
-         Good and Bad Notes for listing up the good and bad parts of my implementation.
- Task 2: all tree classes, all catastrophe classes, parts of the test, historization in forest
- Task 1: parts of the BaseFarmingModel, parts of the NaturalModel, small parts of forest, parts of the test
-
- Nico Lehegzek:
-   Task3: Added conditions (Pre), (Post) (History-C) to all methods implemented in task 1 and 2 by me/the
-          ones I helped with. Added multiple GOOD/BAD Notes to the corresponding methods and classes.
-   Task2: updated NaturalMode, FarmedModel and BaseFarmingModel; added all the new models,
-          parts of Forest, parts von Test
-   Task1: parts of models, parts of NaturalModel, most of forest, parts of Test,
-          parts of BaseFarmingModel
-*/

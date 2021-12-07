@@ -1,4 +1,10 @@
+package Model;
+
 import java.util.Map;
+
+import Forest.*;
+import Catastrophe.*;
+
 
 // GOOD: By using subtyping for the models we guarantee a solid base of cohesion.
 //            Every time someone wants to add a new model to the simulation he doesn't need
@@ -24,8 +30,10 @@ public abstract class BaseFarmingModel {
     private double growth;
 
 
-    // (Pre): forest != NULL; lossFactor >= 0 && lossFactor <= 1; growthFactor >= 0 && growthFactor <= 1
+    // (Pre): forest != null; lossFactor >= 0 && lossFactor <= 1; growthFactor >= 0 && growthFactor <= 1
     // (Post): sets the values: forest, lossFactor, growthFactor, loss and growth of this factor.
+    //         Therefore, forest != null; lossFactor >= 0 && lossFactor <= 1; growthFactor >= 0 && growthFactor <= 1;
+    //         loss >= 0 && loss <= 1; growth >= 0 && growth <= 1
     public BaseFarmingModel(Forest forest, double lossFactor, double growthFactor) {
         this.forest = forest;
         this.lossFactor = lossFactor;
@@ -34,15 +42,14 @@ public abstract class BaseFarmingModel {
         this.growth = (forest.getTargetStock() * growthFactor) - (forest.getTreePopulation() * loss);
     }
 
-
-    // (Post): returns the forest stored in the instance
+    // (Post): returns the forest stored in the instance - can not be null
     public Forest getForest() {
         return forest;
     }
 
     // (Pre): year > 0 && year <= bygone years in simulation
-    // (Post): returns string representing the average values of the forest stored in this instance
-    public String history(int year){
+    // (Post): returns string representing the average values of the forest stored in this instance - is never empty
+    public String history(int year) {
         return forest.historyAverage(year);
     }
 
@@ -53,15 +60,18 @@ public abstract class BaseFarmingModel {
     //          because we added the step() method relatively late to our BaseModel and therefore forgot
     //          to change the keywords.
 
-    // (Post): returns the growth of the current year stored in the instance
-    public double getGrowth() { return this.growth; }
+    // (Post): returns the growth of the current year stored in the instance - value between 0 and 1
+    public double getGrowth() {
+        return this.growth;
+    }
 
-    // (Post): returns the loss of the current year stored in the instance
+    // (Post): returns the loss of the current year stored in the instance - value between 0 and 1
     public double getLoss() {
         return this.loss;
     }
 
     // (Post): (calculates and) updates the values lossFactor and loss of this instance
+    //          lossFactor and loss are set between 0 and 1
     public void setLossFactor(double lossFactor) {
         if (lossFactor < 0)
             this.lossFactor = 0;
@@ -70,9 +80,9 @@ public abstract class BaseFarmingModel {
         else
             this.lossFactor = lossFactor;
         this.loss = lossFactor * forest.getHealth();
-        if(!(this.loss>0))
+        if (!(this.loss > 0))
             this.loss = 0;
-        if(this.loss>1)
+        if (this.loss > 1)
             this.loss = 1;
     }
 
@@ -84,11 +94,11 @@ public abstract class BaseFarmingModel {
             this.growthFactor = 1;
         else
             this.growthFactor = growthFactor;
-        // update the growth
+
         this.growth = (forest.getTargetStock() * growthFactor) - (forest.getTreePopulation() * loss);
-        if(!(this.growth>0))
+        if (!(this.growth > 0))
             this.growth = 0;
-        if(this.growth>1)
+        if (this.growth > 1)
             this.growth = 1;
     }
 
@@ -97,68 +107,62 @@ public abstract class BaseFarmingModel {
     //           with methods from the forest. This way the object coupling is kept as minimal as possible.
 
     // (Post): calculates and sets the influence factors (some by calling other functions) such as:
-    //         soilQuality (forest), lossFactor, growthFactor, stability (forest), hoursOfSunshine (forest),
-    //         waterStock
+    //         soilQuality (forest) (between 0 and 1), lossFactor (between 0 and 1), growthFactor (between 0 and 1),
+    //         stability (forest) (between 0 and 1), hoursOfSunshine (forest) (>= 0), waterStock (between 0 and 1)
+    //         - for all between 0 and 1: 0 being lowest and 1 being highest
     //
     // (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
     //              provide correct calculations: calcSpecificFactors(), calcStock(), calcAgeStructure(), calcHealth(),
     //              calcTargetStock(), calcCo2Stock()
-    private void calcInfluenceFactors(){
+    private void calcInfluenceFactors() {
         forest.calcSoil();
-        setLossFactor(lossFactor+lossFactor*((1-forest.getSoilQuality())));
-        if(forest.getSoilQuality() > .95)
-            setGrowthFactor(growthFactor+(growthFactor*0.24));
+        setLossFactor(lossFactor + lossFactor * ((1 - forest.getSoilQuality())));
+        if (forest.getSoilQuality() > .95)
+            setGrowthFactor(growthFactor + (growthFactor * 0.24));
         else
             setGrowthFactor(growthFactor);
 
         forest.calcStability();
-        setLossFactor(lossFactor+lossFactor*(forest.getStability()));
+        setLossFactor(lossFactor + lossFactor * (forest.getStability()));
         setGrowthFactor(growthFactor);
 
-        setGrowthFactor(growthFactor+0.1 * forest.getWaterStock());
+        setGrowthFactor(growthFactor + 0.1 * forest.getWaterStock());
 
-        if(forest.getHoursOfSunshine()<1000){
-            setLossFactor(lossFactor+(lossFactor*0.13));
-            setGrowthFactor(growthFactor-(growthFactor*0.57));
-        }
-        else if(forest.getHoursOfSunshine()<1800){
-            setLossFactor(lossFactor+(lossFactor*0.08));
-            setGrowthFactor(growthFactor-(growthFactor*0.3));
-        }
-        else{
-            setGrowthFactor(growthFactor+(growthFactor*0.2));
+        if (forest.getHoursOfSunshine() < 1000) {
+            setLossFactor(lossFactor + (lossFactor * 0.13));
+            setGrowthFactor(growthFactor - (growthFactor * 0.57));
+        } else if (forest.getHoursOfSunshine() < 1800) {
+            setLossFactor(lossFactor + (lossFactor * 0.08));
+            setGrowthFactor(growthFactor - (growthFactor * 0.3));
+        } else {
+            setGrowthFactor(growthFactor + (growthFactor * 0.2));
         }
 
-        if(forest.calcMonoculture()){
-            setLossFactor(lossFactor+(lossFactor*0.2));
-            setGrowthFactor(growthFactor+(growthFactor*0.1));
+        if (forest.calcMonoculture()) {
+            setLossFactor(lossFactor + (lossFactor * 0.2));
+            setGrowthFactor(growthFactor + (growthFactor * 0.1));
         }
 
-        if(forest.getVisitors()>500){
-            setLossFactor(lossFactor+(lossFactor*0.01));
+        if (forest.getVisitors() > 500) {
+            setLossFactor(lossFactor + (lossFactor * 0.01));
             setGrowthFactor(growthFactor);
-        }
-        else if(forest.getVisitors()>1000){
-            setLossFactor(lossFactor+(lossFactor*0.05));
+        } else if (forest.getVisitors() > 1000) {
+            setLossFactor(lossFactor + (lossFactor * 0.05));
             setGrowthFactor(growthFactor);
-        }
-        else if(forest.getVisitors()>5000){
-            setLossFactor(lossFactor+(lossFactor*0.06));
+        } else if (forest.getVisitors() > 5000) {
+            setLossFactor(lossFactor + (lossFactor * 0.06));
             setGrowthFactor(growthFactor);
-        }
-        else if(forest.getVisitors()>10000){
-            setLossFactor(lossFactor+(lossFactor*0.3));
+        } else if (forest.getVisitors() > 10000) {
+            setLossFactor(lossFactor + (lossFactor * 0.3));
             setGrowthFactor(growthFactor);
         }
 
-        if(forest.getDeer()>forest.getWolfs()*1.5){
-            setLossFactor(lossFactor+(lossFactor*0.03));
-        }
-        else if(forest.getDeer()>forest.getWolfs()*2){
-            setLossFactor(lossFactor+(lossFactor*0.06));
-        }
-        else if(forest.getDeer()>forest.getWolfs()*3){
-            setLossFactor(lossFactor+(lossFactor*0.1));
+        if (forest.getDeer() > forest.getWolfs() * 1.5) {
+            setLossFactor(lossFactor + (lossFactor * 0.03));
+        } else if (forest.getDeer() > forest.getWolfs() * 2) {
+            setLossFactor(lossFactor + (lossFactor * 0.06));
+        } else if (forest.getDeer() > forest.getWolfs() * 3) {
+            setLossFactor(lossFactor + (lossFactor * 0.1));
         }
 
         setGrowthFactor(growthFactor);
@@ -166,13 +170,14 @@ public abstract class BaseFarmingModel {
     }
 
     // (Post): updates the age structure of the forest stored in this instance by one year
+    //         therefore increases the amount of young trees and might decrease proportion of older trees
     //  (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
     //               provide correct calculations: calcHealth(), calcTargetStock(), calcCo2Stock()
     public void calcAgeStructure() {
         this.getForest().increaseAge(getLoss());
     }
 
-    // (Post): updates the targetStock considering the loss of the current year
+    // (Post): updates the targetStock considering the loss of the current year (>= 0 && <= max target stock)
     // (History-C): for each invocation of calcInfluenceFactors(), calcCo2Stock() has to be called to
     //              provide correction calculations.
     public void calcTargetStock() {
@@ -187,7 +192,7 @@ public abstract class BaseFarmingModel {
     }
 
     // (Post): calculates the health of the forest stored in this instance using the age structure and updates
-    //         the value.
+    //         the value (value between 0 and 1 while 0 is the worst and 1 the best).
     // (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
     //              provide correct calculations: calcTargetStock(), calcCo2Stock()
     public void calcHealth() {
@@ -218,16 +223,20 @@ public abstract class BaseFarmingModel {
 
     // (Pre): visitors >= 0; sunHours >= 0
     // (Post): calls all methods needed to simulate a year of the forest stored in this model
-    //         and updates all the values.
+    //         and updates all the values - waterstock, health, stock, targetstock, co2-stock might drop but never
+    //         below 0, they can also increase or stay the same. The others can only increase but might stay the same.
+    //         - visitors >= 0, hoursOfSunshine >= 0, waterstock >= 0 && waterstock <= 1, stock >= 0 &&
+    //           stock <= targetStock, health >= 0 && health <= 1, targetStock >= 0, targetStock <= maxStock,
+    //           co2-stock >= 0
     // (Hist-C): year can only be increased one by one - meaning is needs to be increased by one
     //           compared to the previous entry.
-    public void step(int visitors, double sunHours, Catastrophe c,int year) {
+    public void step(int visitors, double sunHours, Catastrophe c, int year) {
         forest.calcForestType();
         forest.simulateAnimalActivity();
         forest.setVisitors(visitors);
         forest.setHoursOfSunshine(sunHours);
         forest.calcWaterstock();
-        if(c != null) catastropheHandler(c);
+        if (c != null) catastropheHandler(c);
         calcInfluenceFactors();
         calcSpecificFactors();
         calcStock();
@@ -246,27 +255,27 @@ public abstract class BaseFarmingModel {
     //          to change the keywords.
 
     // (Post): calls all methods needed to simulate a year of the forest stored in this model
-    //         and updates all the values.
-    public void co2Impact(double impact){
+    //        the co2-stock accordingly - co2-stock is for sure >= 0
+    public void co2Impact(double impact) {
         if (impact < 0)
             impact = 0;
-        if(forest.getco2Vorrat() * impact < 0)
+        if (forest.getco2Vorrat() * impact < 0)
             forest.setco2Vorrat(0);
         else
             forest.setco2Vorrat(forest.getco2Vorrat() * impact);
     }
 
     // (Pre): loss >= 0; loss <= 1
-    // (Post): updates the co2-stock with the given loss value
+    // (Post): updates the co2-stock with the given loss value - for sure >= 0 afterwards
     public void co2InsignificantLoss(double loss) {
-        if(forest.getco2Vorrat()+ forest.getTreePopulation() * loss / 3 < 0)
+        if (forest.getco2Vorrat() + forest.getTreePopulation() * loss / 3 < 0)
             forest.setco2Vorrat(0);
         else
             forest.setco2Vorrat(forest.getco2Vorrat() + forest.getTreePopulation() * loss / 3);
     }
 
     // (Pre): loss >= 0; loss <= 1
-    // (Post): updates the co2-stock with the given loss value
+    // (Post): updates the co2-stock with the given loss value - for sure >= 0 afterwards
     public void targetStockLoss(double loss) {
         if (forest.getTargetStock() * ((1 - loss)) < 0)
             forest.setTargetStock(0);
@@ -275,8 +284,10 @@ public abstract class BaseFarmingModel {
     }
 
     // (Pre): loss >= 0; loss <= 1
-    // (Post): sets loss stored in this instance to the given value loss
-    public void setLoss(double loss){ this.loss = loss;}
+    // (Post): sets loss stored in this instance to the given value loss - afterwards between 0 and 1
+    public void setLoss(double loss) {
+        this.loss = loss;
+    }
 
     // BAD: Here we could have implemented some base methode for the underlying abstract methods
     //           instead of declaring them abstract which could have been used by very simple models
@@ -291,12 +302,13 @@ public abstract class BaseFarmingModel {
     //           methods offered by the forest.
 
     // (Post): calculates the tree population of the forest stored in this instance
+    //         - stock for sure between 0 and targetStock; and targetStock >= 0 and targetStock <= maxTargetStock
     //  (History-C): for each invocation of calcInfluenceFactors(), following methods have to be invoked as well to
     //               provide correct calculations: calcAgeStructure(), calcHealth(), calcTargetStock(),
     //               calcCo2Stock()
     protected abstract void calcStock();
 
-    // (Post): calculates the CO2 stock of the forest stored in this instance and updates the value.
+    // (Post): calculates the CO2 stock of the forest stored in this instance and updates the value - for sure >= 0
     protected abstract void calcCo2Stock();
 
     // (Post): calculates and sets additional influence factors (some by calling other functions)
@@ -308,7 +320,7 @@ public abstract class BaseFarmingModel {
     // (Post): calculates the impact of a catastrophe on the forest and updates affected values
     protected abstract void catastropheHandler(Catastrophe t);
 
-    // (Post): returns a string with the name of the Model
+    // (Post): returns a string with the name of the Model - never empty
     //      and the details of the forest stored in this instance
     public abstract String toString();
 }

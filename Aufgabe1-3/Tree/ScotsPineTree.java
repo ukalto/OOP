@@ -1,4 +1,6 @@
-public class ScotsPineTree extends Tree{
+package Tree;
+
+public class ScotsPineTree extends Tree {
     // (Pre): waterStock >= 0 && waterStock <= 100
     // (Post): A ScotsPineTree is created with the max height 25, tree type ScotsPine, min temp 30, max temp 40
     // max age 90, fire resistance 0.05, freeze 0-1, infestation resistance 0.05, moor resistance 0-1,

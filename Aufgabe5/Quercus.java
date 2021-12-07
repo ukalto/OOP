@@ -1,8 +1,8 @@
 public class Quercus implements Tree {
     // (I) >= 0
-    private double treeHeight;
+    private final double treeHeight;
     // (I) >= 0 && <= treeHeight
-    private double stemHeight;
+    private final double stemHeight;
 
     // (Pre): treeHeight >= 0 && stemHeight >= 0 && stemHeight <= treeHeight
     // (Post): sets the this.treeHeight = treeHeight and this.stemHeight = stemHeight
